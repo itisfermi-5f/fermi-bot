@@ -16,6 +16,7 @@ users = [
 
 serializer_lock = threading.Lock()
 
+
 def load(path):
     if not os.path.ispath(path):
         raise OSError("path '{}' is not a file.".format(path))
