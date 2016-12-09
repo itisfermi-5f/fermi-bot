@@ -27,7 +27,7 @@ class Server:
             self.threads.append(thread)
 
     def serve_client(self, client, address):
-        fragments = []
+        received = ""
         while True:
             try:
                 fragment = client.recv(self.buffer_size)
@@ -35,20 +35,20 @@ class Server:
                     break
                 fragment = fragment.decode('utf-8')
                 print(fragment)
-                fragments.append(fragment)
+                received += fragment
+                if received.strip() == self.protocol_auth:
+                    client.sendall(b'Processing authentication... ')
+                    self.handle_authentication(address)
+                elif received.startswith(self.protocol_start) and received.endswith(self.protocol_end):
+                    client.sendall(b'Processing message... ')
+                    self.handle_message(address, received[len(self.protocol_start):-len(self.protocol_end)])
+                else:
+                    client.sendall(b'ERROR: message malformed')
+                    print('ERROR: message malformed')
             except:
                 client.close()
                 return False
         client.close()
-        print("--------------")
-        message = ''.join(fragments)
-        print("HANDLING:", message)
-        if message.strip() == self.protocol_auth:
-            self.handle_authentication(address)
-        elif message.startswith(self.protocol_start) and message.endswith(self.protocol_end):
-            self.handle_message(address, message[len(self.protocol_start):-len(self.protocol_end)])
-        else:
-            print('ERROR: message malformed')
         return False
 
     # to be overridden by the Bot
