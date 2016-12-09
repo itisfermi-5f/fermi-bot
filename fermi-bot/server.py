@@ -7,6 +7,9 @@ import threading
 
 
 class Server:
+    protocol_auth = '##AUTH##'
+    protocol_start = '##MESSAGE START##'
+    protocol_end = '##MESSAGE END##'
     def __init__(self, ip, port, inactivity_timeout=20, buffer_size=1024):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((ip, port))
@@ -30,21 +33,32 @@ class Server:
                 fragment = client.recv(self.buffer_size)
                 if not fragment:
                     break
-                fragments.append(str(fragment))
+                fragment = fragment.decode('utf-8')
+                print(fragment)
+                fragments.append(fragment)
             except:
                 client.close()
                 return False
         client.close()
+        print("--------------")
         message = ''.join(fragments)
-        if message == '#-# AUTH #-#':
+        print("HANDLING:", message)
+        if message.strip() == self.protocol_auth:
             self.handle_authentication(address)
+        elif message.startswith(self.protocol_start) and message.endswith(self.protocol_end):
+            self.handle_message(address, message[len(self.protocol_start):-len(self.protocol_end)])
         else:
-            self.handle_message(address, message)
+            print('ERROR: message malformed')
         return False
 
     # to be overridden by the Bot
     def handle_message(self, sender, message):
+        print(sender, '|', message)
+        return
         raise NotImplementedError('this method needs to be overridden externally.')
 
     def handle_authentication(self, sender):
+        print('AUTH |', sender)
+        return
         raise NotImplementedError('this method needs to be overridden externally.')
+
