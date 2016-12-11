@@ -46,7 +46,7 @@ class Server:
                     client.close()
                 elif received.lstrip().startswith(self.protocol_start) and received.rstrip().endswith(self.protocol_end):
                     client.sendall(b'Processing message... ')
-                    if self.handle_message(address, received[len(self.protocol_start):-(len(self.protocol_end)+1)]):
+                    if self.handle_message(address, received[len(self.protocol_start):-(len(self.protocol_end))]):
                         client.sendall(b'Message delivered.')
                     else:
                         client.sendall(b'Falied to send message.')
