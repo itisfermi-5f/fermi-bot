@@ -27,6 +27,7 @@ class Server:
             self.threads.append(thread)
 
     def serve_client(self, client, address):
+        print("==] Connected to {}:{}.".format(address[0], address[1]))
         received = ""
         while True:
             try:
@@ -34,20 +35,32 @@ class Server:
                 if not fragment:
                     break
                 fragment = fragment.decode('utf-8')
-                print(fragment)
                 received += fragment
+                print(received)
                 if received.strip() == self.protocol_auth:
                     client.sendall(b'Processing authentication... ')
-                    self.handle_authentication(address)
-                elif received.startswith(self.protocol_start) and received.endswith(self.protocol_end):
+                    if self.handle_authentication(address):
+                        client.sendall(b'Authentication granted.')
+                    else:
+                        client.sendall(b'Authentication failed.')
+                    client.close()
+                elif received.lstrip().startswith(self.protocol_start) and received.rstrip().endswith(self.protocol_end):
                     client.sendall(b'Processing message... ')
-                    self.handle_message(address, received[len(self.protocol_start):-len(self.protocol_end)])
+                    if self.handle_message(address, received[len(self.protocol_start):-(len(self.protocol_end)+1)]):
+                        client.sendall(b'Message delivered.')
+                    else:
+                        client.sendall(b'Falied to send message.')
+                    client.close()
+#                elif received.startswith(self.protocol_start) and not received.endswith(self.protocol_end):
+#                     continue
                 else:
                     client.sendall(b'ERROR: message malformed')
                     print('ERROR: message malformed')
-            except:
+            except Exception as exc:
+                print("==] Connection to {}:{} closed.".format(address[0], address[1]))
                 client.close()
                 return False
+        print("==] Connection to {}:{} closed.".format(address[0], address[1]))
         client.close()
         return False
 
